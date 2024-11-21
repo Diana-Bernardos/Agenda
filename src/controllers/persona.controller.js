@@ -1,43 +1,65 @@
 const PersonaModel = require('../models/persona.model');
-const DireccionModel = require('../models/direccion.model');
 
-const pool = require('../config/database');
-
-const PersonaController = {
-  crear: async (req, res) => {
+class PersonaController {
+  static async crear(req, res) {
     try {
       const { nombre, apellido, telefono, email, direccion } = req.body;
-      
-      // Create the address record first
-      const [addressResult] = await pool.query(`
-        INSERT INTO direcciones (calle, numero, ciudad, codigo_postal, pais)
-        VALUES (?, ?, ?, ?, ?)
-      `, [direccion.calle, direccion.numero, direccion.ciudad, direccion.codigoPostal, direccion.pais]);
-      
-      const direccionId = addressResult.insertId;
-      
-      // Create the persona record
-      const [personaResult] = await pool.query(`
-        INSERT INTO personas (nombre, apellido, telefono, email, direccion_id)
-        VALUES (?, ?, ?, ?, ?)
-      `, [nombre, apellido, telefono, email, direccionId]);
-      
-      res.status(201).json({ id: personaResult.insertId });
+      const id = await PersonaModel.crear({ nombre, apellido, telefono, email }, direccion);
+      res.status(201).json({ id, mensaje: 'Persona creada exitosamente' });
     } catch (error) {
-      console.error('Error creating persona:', error);
-      res.status(500).json({ error: 'Error creating persona' });
-    }
-  },
-  
-  obtenerTodos: async (req, res) => {
-    try {
-      const [rows] = await pool.query('SELECT * FROM personas');
-      res.json(rows);
-    } catch (error) {
-      console.error('Error retrieving personas:', error);
-      res.status(500).json({ error: 'Error retrieving personas' });
+      res.status(500).json({ error: error.message });
     }
   }
-};
+
+  static async obtenerTodos(req, res) {
+    try {
+      const personas = await PersonaModel.obtenerTodos();
+      res.json(personas);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async obtenerPorId(req, res) {
+    try {
+      const persona = await PersonaModel.obtenerPorId(req.params.id);
+      if (!persona) {
+        return res.status(404).json({ mensaje: 'Persona no encontrada' });
+      }
+      res.json(persona);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async actualizar(req, res) {
+    try {
+      const { nombre, apellido, telefono, email, direccion } = req.body;
+      await PersonaModel.actualizar(
+        req.params.id,
+        { nombre, apellido, telefono, email },
+        direccion
+      );
+      res.json({ mensaje: 'Persona actualizada exitosamente' });
+    } catch (error) {
+      if (error.message === 'Persona no encontrada') {
+        return res.status(404).json({ mensaje: error.message });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async eliminar(req, res) {
+    try {
+      await PersonaModel.eliminar(req.params.id);
+      res.json({ mensaje: 'Persona eliminada exitosamente' });
+    } catch (error) {
+      if (error.message === 'Persona no encontrada') {
+        return res.status(404).json({ mensaje: error.message });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  }
+}
 
 module.exports = PersonaController;
