@@ -1,4 +1,4 @@
-const pool = require('../config/agenda');
+const pool = require('../config/database');
 
 class DireccionModel {
   static async crear(direccion) {

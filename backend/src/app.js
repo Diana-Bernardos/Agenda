@@ -1,10 +1,14 @@
 // src/index.js
 require('dotenv').config();
 import express, { json } from 'express';
+const express = require('express');
+const cors = require('cors');
 const app = express();
-import personaRoutes from './routes/persona.routes';
 
-use(json());
+const personaRoutes = require('./routes/persona.routes');
+
+app.use(cors());
+app.use(express.json());
 
 // Middleware para logging
 use((req, res, next) => {
@@ -13,19 +17,19 @@ use((req, res, next) => {
 });
 
 // Rutas
-use('/personas', personaRoutes);
+app.use('/personas', personaRoutes);
 
 export default app;
 
 // server.js
-import app, { use, listen } from './app';
-import { getConnection } from './config/agenda';
+const app = require('./app');
+const pool = require('./config/database');
 
 const PORT = process.env.PORT || 3000;
 
 async function verificarConexion() {
   try {
-    const connection = await getConnection();
+    const connection = await pool.getConnection();
     console.log('✓ Conexión a MySQL exitosa');
     connection.release();
     return true;
@@ -43,7 +47,7 @@ async function iniciarServidor() {
       throw new Error('No se pudo conectar a la base de datos');
     }
 
-    listen(PORT, () => {
+    app.listen(PORT, () => {
       console.log(`✓ Servidor corriendo en http://localhost:${PORT}`);
     });
   } catch (error) {
@@ -53,6 +57,7 @@ async function iniciarServidor() {
 }
 
 iniciarServidor();
+
 
 process.on('uncaughtException', (error) => {
   console.error('Error no capturado:', error);

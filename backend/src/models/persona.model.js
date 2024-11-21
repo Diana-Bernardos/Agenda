@@ -1,10 +1,20 @@
-const pool = require('../config/agenda');
+const pool = require('../config/database');
 
 class PersonaModel {
+  static async obtenerTodos() {
+    const [rows] = await pool.query(`
+      SELECT p.*, d.calle, d.numero, d.ciudad, d.codigo_postal, d.pais
+      FROM personas p
+      LEFT JOIN direcciones d ON p.direccion_id = d.id
+    `);
+    return rows;
+  }
+
   static async crear(persona, direccion) {
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
+
 
       // Insertar dirección
       const [resultDireccion] = await conn.query(
