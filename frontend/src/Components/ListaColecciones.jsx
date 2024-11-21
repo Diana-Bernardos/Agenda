@@ -1,72 +1,68 @@
 
 
+// src/components/ListaColecciones.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
-import '../styles/Card.css';
+import { api } from '../Services/api.js';
+import '../Styles/Card.css';
 
 const ListaColecciones = () => {
   const [colecciones, setColecciones] = useState([]);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [filtro, setFiltro] = useState('');
 
   useEffect(() => {
+    const cargarColecciones = async () => {
+      try {
+        const response = await api.getColecciones();
+        setColecciones(response.data);
+      } catch (err) {
+        setError('Error al cargar colecciones');
+        console.error(err);
+      }
+    };
+
     cargarColecciones();
   }, []);
+  const coleccionesFiltradas = colecciones.filter(coleccion => 
+    coleccion.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+    coleccion.descripcion.toLowerCase().includes(filtro.toLowerCase())
+  );
 
-  const cargarColecciones = async () => {
-    try {
-      const response = await api.getColecciones();
-      setColecciones(response.data);
-    } catch (error) {
-      console.error('Error al cargar colecciones:', error);
-    }
-  };
 
-  const eliminarColeccion = async (id) => {
-    if (window.confirm('¿Estás seguro de eliminar esta colección?')) {
-      try {
-        await api.eliminarColeccion(id);
-        await cargarColecciones();
-      } catch (error) {
-        console.error('Error al eliminar:', error);
-      }
-    }
-  };
+  if (error) return <div>Error: {error}</div>;
 
   return (
-    <div>
+    <div className="lista-colecciones">
       <div className="header-actions">
+
         <h2>Colecciones</h2>
-        <button 
-          className="btn btn-primary"
-          onClick={() => navigate('/colecciones/nueva')}
-        >
-          Nueva Colección
-        </button>
-      </div>
-      <div className="card-grid">
-        {colecciones.map(coleccion => (
-          <div key={coleccion.id} className="card">
-            <h3 className="card-title">{coleccion.nombre}</h3>
-            <p className="card-content">{coleccion.descripcion}</p>
-            <div className="card-actions">
-              <button 
-                className="btn btn-primary"
-                onClick={() => navigate(`/colecciones/${coleccion.id}`)}
-              >
-                Ver Personas
-              </button>
-              <button 
-                className="btn btn-danger"
-                onClick={() => eliminarColeccion(coleccion.id)}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+        <input
+         type="text"
+         placeholder="Buscar colecciones..."
+         value={filtro}
+         onChange={(e) => setFiltro(e.target.value)}
+         className="search-input"
+       />
+       <button onClick={() => navigate('/colecciones/nueva')}>
+         Nueva Colección
+       </button>
+     </div>
+     <div className="colecciones-grid">
+       {coleccionesFiltradas.map(coleccion => (
+         <div key={coleccion.id} className="coleccion-card">
+           <h3>{coleccion.nombre}</h3>
+           <p>{coleccion.descripcion}</p>
+           <div className="card-actions">
+             <button onClick={() => navigate(`/colecciones/${coleccion.id}`)}>
+               Ver
+             </button>
+           </div>
+         </div>
+       ))}
+     </div>
+   </div>
   );
 };
 

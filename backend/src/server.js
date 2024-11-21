@@ -1,17 +1,23 @@
 // src/index.js
 require('dotenv').config();
-import express, { json } from 'express';
 const express = require('express');
 const cors = require('cors');
-const app = express();
-
 const personaRoutes = require('./routes/persona.routes');
+const coleccionRoutes = require('./routes/coleccion.routes');
+const { pool, initDatabase, testConnection } = require('./config/database');
+
+const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use('/personas', personaRoutes);
+app.use('/colecciones', coleccionRoutes);
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-// Middleware para logging
-use((req, res, next) => {
+// Logging middleware
+app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
@@ -19,46 +25,36 @@ use((req, res, next) => {
 // Rutas
 app.use('/personas', personaRoutes);
 
-export default app;
+// Ruta de prueba
+app.get('/test', (req, res) => {
+  res.json({ message: 'API funcionando correctamente' });
+});
 
-// server.js
-const app = require('./app');
-const pool = require('./config/database');
-
+// Puerto
 const PORT = process.env.PORT || 3000;
 
-async function verificarConexion() {
-  try {
-    const connection = await pool.getConnection();
-    console.log('✓ Conexión a MySQL exitosa');
-    connection.release();
-    return true;
-  } catch (error) {
-    console.error('Error al conectar con MySQL:', error.message);
-    return false;
-  }
-}
-
+// Iniciar servidor
 async function iniciarServidor() {
   try {
-    const dbConectada = await verificarConexion();
+    // Inicializar la base de datos
+    await initDatabase();
     
-    if (!dbConectada) {
-      throw new Error('No se pudo conectar a la base de datos');
-    }
+    // Probar la conexión
+    await testConnection();
 
+    // Iniciar el servidor
     app.listen(PORT, () => {
       console.log(`✓ Servidor corriendo en http://localhost:${PORT}`);
     });
   } catch (error) {
-    console.error('Error al iniciar el servidor:', error.message);
+    console.error('Error al iniciar el servidor:', error);
     process.exit(1);
   }
 }
 
 iniciarServidor();
 
-
+// Manejo de errores no capturados
 process.on('uncaughtException', (error) => {
   console.error('Error no capturado:', error);
   process.exit(1);

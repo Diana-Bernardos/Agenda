@@ -1,65 +1,72 @@
-const PersonaModel = require('../models/persona.model');
+const pool = require('../config/database');
 
 class PersonaController {
-  static async crear(req, res) {
-    try {
-      const { nombre, apellido, telefono, email, direccion } = req.body;
-      const id = await PersonaModel.crear({ nombre, apellido, telefono, email }, direccion);
-      res.status(201).json({ id, mensaje: 'Persona creada exitosamente' });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
   static async obtenerTodos(req, res) {
     try {
-      const personas = await PersonaModel.obtenerTodos();
+      const [rows] = await pool.query(`
+        SELECT p.*, d.calle, d.numero, d.ciudad, d.codigo_postal as codigoPostal, d.pais
+        FROM personas p
+        LEFT JOIN direcciones d ON p.direccion_id = d.id
+      `);
+      
+      // Formatea los resultados
+      const personas = rows.map(row => ({
+        id: row.id,
+        nombre: row.nombre,
+        apellido: row.apellido,
+        telefono: row.telefono,
+        email: row.email,
+        direccion: {
+          calle: row.calle,
+          numero: row.numero,
+          ciudad: row.ciudad,
+          codigoPostal: row.codigoPostal,
+          pais: row.pais
+        }
+      }));
+
       res.json(personas);
     } catch (error) {
+      console.error('Error al obtener personas:', error);
       res.status(500).json({ error: error.message });
     }
   }
 
-  static async obtenerPorId(req, res) {
+  static async crear(req, res) {
+    const conn = await pool.getConnection();
     try {
-      const persona = await PersonaModel.obtenerPorId(req.params.id);
-      if (!persona) {
-        return res.status(404).json({ mensaje: 'Persona no encontrada' });
-      }
-      res.json(persona);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
+      await conn.beginTransaction();
 
-  static async actualizar(req, res) {
-    try {
       const { nombre, apellido, telefono, email, direccion } = req.body;
-      await PersonaModel.actualizar(
-        req.params.id,
-        { nombre, apellido, telefono, email },
-        direccion
+
+      // Insertar dirección
+      const [resultDireccion] = await conn.query(
+        'INSERT INTO direcciones (calle, numero, ciudad, codigo_postal, pais) VALUES (?, ?, ?, ?, ?)',
+        [direccion.calle, direccion.numero, direccion.ciudad, direccion.codigoPostal, direccion.pais]
       );
-      res.json({ mensaje: 'Persona actualizada exitosamente' });
+
+      // Insertar persona
+      const [resultPersona] = await conn.query(
+        'INSERT INTO personas (nombre, apellido, telefono, email, direccion_id) VALUES (?, ?, ?, ?, ?)',
+        [nombre, apellido, telefono, email, resultDireccion.insertId]
+      );
+
+      await conn.commit();
+      
+      res.status(201).json({
+        id: resultPersona.insertId,
+        mensaje: 'Persona creada exitosamente'
+      });
     } catch (error) {
-      if (error.message === 'Persona no encontrada') {
-        return res.status(404).json({ mensaje: error.message });
-      }
+      await conn.rollback();
+      console.error('Error al crear persona:', error);
       res.status(500).json({ error: error.message });
+    } finally {
+      conn.release();
     }
   }
 
-  static async eliminar(req, res) {
-    try {
-      await PersonaModel.eliminar(req.params.id);
-      res.json({ mensaje: 'Persona eliminada exitosamente' });
-    } catch (error) {
-      if (error.message === 'Persona no encontrada') {
-        return res.status(404).json({ mensaje: error.message });
-      }
-      res.status(500).json({ error: error.message });
-    }
-  }
+  // ... otros métodos del controlador
 }
 
 module.exports = PersonaController;

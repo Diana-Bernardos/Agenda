@@ -1,15 +1,17 @@
 
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { api } from '../services/api';
-import '../styles/Form.css';
+/// src/Components/PersonaForm.jsx
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../Services/api.js';
+import '../Styles/Form.css';
 
 const PersonaForm = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const [cargando, setCargando] = useState(id ? true : false);
-  const [persona, setPersona] = useState({
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
     telefono: '',
@@ -18,43 +20,16 @@ const PersonaForm = () => {
       calle: '',
       numero: '',
       ciudad: '',
-      codigo_postal: '',
+      codigoPostal: '',
       pais: ''
     }
   });
-
-  useEffect(() => {
-    if (id) {
-      cargarPersona();
-    }
-  }, [id]);
-
-  const cargarPersona = async () => {
-    try {
-      const response = await api.getPersona(id);
-      setPersona({
-        ...response.data,
-        direccion: response.data.direccion || {
-          calle: '',
-          numero: '',
-          ciudad: '',
-          codigo_postal: '',
-          pais: ''
-        }
-      });
-      setCargando(false);
-    } catch (error) {
-      console.error('Error al cargar persona:', error);
-      alert('Error al cargar los datos de la persona');
-      navigate('/');
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name.startsWith('direccion.')) {
       const campo = name.split('.')[1];
-      setPersona(prev => ({
+      setFormData(prev => ({
         ...prev,
         direccion: {
           ...prev.direccion,
@@ -62,7 +37,7 @@ const PersonaForm = () => {
         }
       }));
     } else {
-      setPersona(prev => ({
+      setFormData(prev => ({
         ...prev,
         [name]: value
       }));
@@ -71,158 +46,158 @@ const PersonaForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     try {
-      if (id) {
-        await api.actualizarPersona(id, persona);
-      } else {
-        await api.crearPersona(persona);
-      }
+      const response = await api.crearPersona(formData);
+      console.log('Persona creada:', response.data);
+      alert('Persona guardada exitosamente');
       navigate('/');
     } catch (error) {
       console.error('Error al guardar:', error);
-      alert('Error al guardar los datos');
+      setError('Error al guardar la persona. Por favor, intente de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (cargando) {
-    return <div className="loading">Cargando...</div>;
-  }
-
   return (
     <div className="form-container">
-      <h2>{id ? 'Editar Persona' : 'Nueva Persona'}</h2>
+      <h2>Nueva Contacto</h2>
+      {error && <div className="error-message">{error}</div>}
+      
       <form onSubmit={handleSubmit}>
-        <div className="form-section">
-          <h3>Datos Personales</h3>
-          
-          <div className="form-group">
-            <label htmlFor="nombre">Nombre:</label>
-            <input
-              type="text"
-              id="nombre"
-              name="nombre"
-              className="form-control"
-              value={persona.nombre}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="apellido">Apellido:</label>
-            <input
-              type="text"
-              id="apellido"
-              name="apellido"
-              className="form-control"
-              value={persona.apellido}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="telefono">Teléfono:</label>
-            <input
-              type="tel"
-              id="telefono"
-              name="telefono"
-              className="form-control"
-              value={persona.telefono}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="email">Email:</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              className="form-control"
-              value={persona.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="nombre">Nombre:</label>
+          <input
+            type="text"
+            id="nombre"
+            name="nombre"
+            value={formData.nombre}
+            onChange={handleChange}
+            required
+            className="form-control"
+          />
         </div>
 
-        <div className="form-section">
-          <h3>Dirección</h3>
-          
-          <div className="form-group">
-            <label htmlFor="calle">Calle:</label>
-            <input
-              type="text"
-              id="calle"
-              name="direccion.calle"
-              className="form-control"
-              value={persona.direccion.calle}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="apellido">Apellido:</label>
+          <input
+            type="text"
+            id="apellido"
+            name="apellido"
+            value={formData.apellido}
+            onChange={handleChange}
+            required
+            className="form-control"
+          />
+        </div>
 
-          <div className="form-group">
-            <label htmlFor="numero">Número:</label>
-            <input
-              type="text"
-              id="numero"
-              name="direccion.numero"
-              className="form-control"
-              value={persona.direccion.numero}
-              onChange={handleChange}
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="telefono">Teléfono:</label>
+          <input
+            type="tel"
+            id="telefono"
+            name="telefono"
+            value={formData.telefono}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
 
-          <div className="form-group">
-            <label htmlFor="ciudad">Ciudad:</label>
-            <input
-              type="text"
-              id="ciudad"
-              name="direccion.ciudad"
-              className="form-control"
-              value={persona.direccion.ciudad}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="email">Email:</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            className="form-control"
+          />
+        </div>
 
-          <div className="form-group">
-            <label htmlFor="codigo_postal">Código Postal:</label>
-            <input
-              type="text"
-              id="codigo_postal"
-              name="direccion.codigo_postal"
-              className="form-control"
-              value={persona.direccion.codigo_postal}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        <h3>Dirección</h3>
+        
+        <div className="form-group">
+          <label htmlFor="calle">Calle:</label>
+          <input
+            type="text"
+            id="calle"
+            name="direccion.calle"
+            value={formData.direccion.calle}
+            onChange={handleChange}
+            required
+            className="form-control"
+          />
+        </div>
 
-          <div className="form-group">
-            <label htmlFor="pais">País:</label>
-            <input
-              type="text"
-              id="pais"
-              name="direccion.pais"
-              className="form-control"
-              value={persona.direccion.pais}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="numero">Número:</label>
+          <input
+            type="text"
+            id="numero"
+            name="direccion.numero"
+            value={formData.direccion.numero}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="ciudad">Ciudad:</label>
+          <input
+            type="text"
+            id="ciudad"
+            name="direccion.ciudad"
+            value={formData.direccion.ciudad}
+            onChange={handleChange}
+            required
+            className="form-control"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="codigoPostal">Código Postal:</label>
+          <input
+            type="text"
+            id="codigoPostal"
+            name="direccion.codigoPostal"
+            value={formData.direccion.codigoPostal}
+            onChange={handleChange}
+            required
+            className="form-control"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="pais">País:</label>
+          <input
+            type="text"
+            id="pais"
+            name="direccion.pais"
+            value={formData.direccion.pais}
+            onChange={handleChange}
+            required
+            className="form-control"
+          />
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            {id ? 'Actualizar' : 'Crear'}
+          <button 
+            type="submit" 
+            className="btn btn-primary"
+            disabled={loading}
+          >
+            {loading ? 'Guardando...' : 'Guardar'}
           </button>
           <button 
             type="button" 
             className="btn btn-secondary"
             onClick={() => navigate('/')}
+            disabled={loading}
           >
             Cancelar
           </button>

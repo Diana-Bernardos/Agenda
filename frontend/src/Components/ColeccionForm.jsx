@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
-import '../styles/Form.css';
+import { api } from '../Services/api.js';
+import '../Styles/Form.css';
+
 
 const ColeccionForm = ({ coleccion: coleccionInicial, modo = 'crear' }) => {
   const navigate = useNavigate();

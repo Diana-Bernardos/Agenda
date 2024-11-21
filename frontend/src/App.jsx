@@ -1,12 +1,13 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import ListaPersonas from './components/ListaPersonas';
-import PersonaForm from './components/PersonaForm';
-import ListaColecciones from './components/ListaColecciones';
-import ColeccionForm from './components/ColeccionForm';
-import DetalleColeccion from './components/DetalleColeccion';
-import './styles/index.css';
+import ListaPersonas from './Components/ListaPersonas.jsx';
+import PersonaForm from './Components/PersonaForm.jsx';
+import ListaColecciones from './Components/ListaColecciones.jsx';
+import ColeccionForm from './Components/ColeccionForm.jsx';
+import DetalleColeccion from './Components/DetalleColeccion.jsx';
+import './Styles/Layout.css';
+import './Styles/App.css';
 
 function App() {
   return (
@@ -16,7 +17,7 @@ function App() {
           <div className="nav-content">
             <h1>Agenda de Contactos</h1>
             <div className="nav-links">
-              <Link to="/" className="nav-link">Personas</Link>
+              <Link to="/" className="nav-link">Contactos</Link>
               <Link to="/colecciones" className="nav-link">Colecciones</Link>
             </div>
           </div>
@@ -32,10 +33,6 @@ function App() {
             <Route path="/colecciones/:id" element={<DetalleColeccion />} />
           </Routes>
         </main>
-
-        <footer className="footer">
-          <p>© 2024 Agenda de Contactos</p>
-        </footer>
       </div>
     </Router>
   );

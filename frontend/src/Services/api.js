@@ -17,6 +17,7 @@ export const api = {
   crearColeccion: (coleccion) => axios.post(`${API_URL}/colecciones`, coleccion),
   actualizarColeccion: (id, coleccion) => axios.put(`${API_URL}/colecciones/${id}`, coleccion),
   eliminarColeccion: (id) => axios.delete(`${API_URL}/colecciones/${id}`),
+  getPersonasDeColeccion: (coleccionId) => axios.get(`${API_URL}/colecciones/${coleccionId}/personas`),
 
   // Relaciones
   agregarPersonaAColeccion: (personaId, coleccionId) => 

@@ -33,4 +33,13 @@
     display: flex;
     gap: 0.5rem;
   }
+
+  .search-input {
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 300px;
+  }
   

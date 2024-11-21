@@ -1,17 +1,17 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
-import '../styles/Card.css';
+import { useNavigate, useParams } from 'react-router-dom';
+import { api } from '../Services/api.js';
+import '../Styles/Card.css';
 
 const DetalleColeccion = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [coleccion, setColeccion] = useState(null);
   const [personas, setPersonas] = useState([]);
-  const [personasDisponibles, setPersonasDisponibles] = useState([]);
+  const [todasLasPersonas, setTodasLasPersonas] = useState([]);
   const [selectedPersona, setSelectedPersona] = useState('');
+  
 
   useEffect(() => {
     cargarDatos();
@@ -19,20 +19,19 @@ const DetalleColeccion = () => {
 
   const cargarDatos = async () => {
     try {
-      const [coleccionRes, personasRes] = await Promise.all([
+      const [coleccionRes, personasRes, todasRes] = await Promise.all([
         api.getColeccion(id),
+        api.getPersonasDeColeccion(id),
         api.getPersonas()
       ]);
+      
       setColeccion(coleccionRes.data);
-      setPersonas(coleccionRes.data.personas || []);
-      setPersonasDisponibles(personasRes.data.filter(
-        p => !coleccionRes.data.personas?.some(cp => cp.id === p.id)
-      ));
+      setPersonas(personasRes.data);
+      setTodasLasPersonas(todasRes.data);
     } catch (error) {
-      console.error('Error al cargar datos:', error);
+      console.error('Error:', error);
     }
   };
-
   const agregarPersona = async () => {
     if (!selectedPersona) return;
     try {
@@ -56,51 +55,55 @@ const DetalleColeccion = () => {
   if (!coleccion) return <div>Cargando...</div>;
 
   return (
-    <div className="coleccion-detalle">
-      <h2>{coleccion.nombre}</h2>
-      <p>{coleccion.descripcion}</p>
-
-      <div className="agregar-persona">
+    <div className="p-4">
+      <h2 className="text-2xl mb-4">{coleccion.nombre}</h2>
+      <p className="mb-4">{coleccion.descripcion}</p>
+ 
+      <div className="mb-4">
+        <h3 className="text-xl mb-2">Agregar Persona</h3>
         <select 
-          value={selectedPersona}
+          value={selectedPersona} 
           onChange={(e) => setSelectedPersona(e.target.value)}
-          className="form-control"
+          className="mr-2 p-2 border rounded"
         >
-          <option value="">Seleccionar persona</option>
-          {personasDisponibles.map(p => (
-            <option key={p.id} value={p.id}>
-              {p.nombre} {p.apellido}
-            </option>
-          ))}
+          <option value="">Seleccionar persona...</option>
+          {todasLasPersonas
+            .filter(p => !personas.find(pp => pp.id === p.id))
+            .map(persona => (
+              <option key={persona.id} value={persona.id}>
+                {persona.nombre} {persona.apellido}
+              </option>
+            ))}
         </select>
         <button 
-          className="btn btn-primary"
           onClick={agregarPersona}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
         >
-          Agregar a la colección
+          Agregar
         </button>
       </div>
-
-      <div className="card-grid">
-        {personas.map(persona => (
-          <div key={persona.id} className="card">
-            <h3 className="card-title">
-              {persona.nombre} {persona.apellido}
-            </h3>
-            <p className="card-content">{persona.email}</p>
-            <div className="card-actions">
+ 
+      <div>
+        <h3 className="text-xl mb-2">Personas en esta colección</h3>
+        <div className="grid gap-4">
+          {personas.map(persona => (
+            <div key={persona.id} className="border p-4 rounded flex justify-between items-center">
+              <div>
+                <p className="font-bold">{persona.nombre} {persona.apellido}</p>
+                <p>{persona.email}</p>
+              </div>
               <button 
-                className="btn btn-danger"
                 onClick={() => quitarPersona(persona.id)}
+                className="bg-red-500 text-white px-4 py-2 rounded"
               >
-                Quitar de la colección
+                Eliminar
               </button>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
-};
-
-export default DetalleColeccion;
+ };
+ 
+ export default DetalleColeccion;
