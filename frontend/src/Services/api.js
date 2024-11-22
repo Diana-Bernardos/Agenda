@@ -1,6 +1,7 @@
 
 import axios from 'axios';
 
+// variable de entorno de conexion al back
 const API_URL = 'http://localhost:3000';
 
 export const api = {
